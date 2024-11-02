@@ -57,11 +57,11 @@ def add_tail(board, x, y, tail=True):
         return x, y - 1
     elif board[x + 1][y].id == 0:
         board[x + 1][y].id = TAIL if tail else BODY
-        board[x][y + 1].dir = UP
+        board[x + 1][y].dir = UP
         return x + 1, y
     elif board[x - 1][y].id == 0:
         board[x - 1][y].id = TAIL if tail else BODY
-        board[x][y + 1].dir = DOWN
+        board[x - 1][y].dir = DOWN
         return x - 1, y
 
 def init_snake(board):
