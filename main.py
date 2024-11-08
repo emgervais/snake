@@ -1,114 +1,26 @@
-import pygame
-import random
-from dataclasses import dataclass
+import pygame as py
+import macro
+from init import init_board, draw_grid_of_squares, place_food
 
-global snake_direction
-# Initialize Pygame
-pygame.init()   
-# Set up display
-WIDTH, HEIGHT = 900, 900
-win = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Snake Game")    
-# Define colors
-WHITE = (255, 255, 255)
-GREEN = (0, 255, 0)
-RED = (255, 0, 0)
-EMPTY = 0
-WALL = 1
-HEAD = 2
-BODY = 3
-TAIL = 4
-RED_APPLE = 5
-GREEN_APPLE = 6
-SQUARE_SIZE = HEIGHT / 11
-UP = 0
-DOWN = 1
-LEFT = 2
-RIGHT = 3
-
-@dataclass
-class square:
-    x: float
-    y: float
-    id: int
-    dir: int
-
-def draw_grid_of_squares(board):
-    for row in board:
-        for el in row:
-            pygame.draw.rect(win, WHITE, (el.x, el.y, SQUARE_SIZE, SQUARE_SIZE), 1)
-
-def place_food(board, item):
-    while True:
-        x = random.randint(0, 11 - 1)
-        y = random.randint(0, 11 - 1)
-        if board[x][y].id == 0:
-            board[x][y].id = item
-            break
-
-def add_tail(board, x, y, tail=True):
-    if board[x][y + 1].id == 0:
-        board[x][y + 1].id = TAIL if tail else BODY
-        board[x][y + 1].dir = LEFT
-        return x, y + 1
-    elif board[x][y - 1].id == 0:
-        board[x][y - 1].id = TAIL if tail else BODY
-        board[x][y + 1].dir = RIGHT
-        return x, y - 1
-    elif board[x + 1][y].id == 0:
-        board[x + 1][y].id = TAIL if tail else BODY
-        board[x + 1][y].dir = UP
-        return x + 1, y
-    elif board[x - 1][y].id == 0:
-        board[x - 1][y].id = TAIL if tail else BODY
-        board[x - 1][y].dir = DOWN
-        return x - 1, y
-
-def init_snake(board):
-    while True:
-        x = random.randint(0, 11 - 1)
-        y = random.randint(0, 11 - 1)
-        if board[x][y].id == 0:
-            board[x][y].id = HEAD
-            break
-    x, y = add_tail(board, x ,y, False)
-    add_tail(board, x ,y)
-    
-
-def render(board):
+def render(board, win):
     for r in board:
         for el in r:
-            if(el.id == EMPTY):
+            if(el.id == macro.EMPTY):
                 continue
-            elif el.id == WALL:
-                win.fill("grey", (el.x + 5, el.y + 5, SQUARE_SIZE - 10, SQUARE_SIZE - 10))
-            elif el.id == RED_APPLE:
-                win.fill("purple", (el.x + 5, el.y + 5, SQUARE_SIZE - 10, SQUARE_SIZE - 10))
-            elif el.id == GREEN_APPLE:
-                win.fill("green", (el.x + 5, el.y + 5, SQUARE_SIZE - 10, SQUARE_SIZE - 10))
-            elif el.id == HEAD:
-                win.fill("yellow", (el.x + 5, el.y + 5, SQUARE_SIZE - 10, SQUARE_SIZE - 10))
-            elif el.id == BODY:
-                win.fill("orange", (el.x + 5, el.y + 5, SQUARE_SIZE - 10, SQUARE_SIZE - 10))
-            elif el.id == TAIL:
-                win.fill("red", (el.x + 5, el.y + 5, SQUARE_SIZE - 10, SQUARE_SIZE - 10))
+            elif el.id == macro.WALL:
+                win.fill("grey", (el.x + 5, el.y + 5, macro.SQUARE_SIZE - 10, macro.SQUARE_SIZE - 10))
+            elif el.id == macro.RED_APPLE:
+                win.fill("purple", (el.x + 5, el.y + 5, macro.SQUARE_SIZE - 10, macro.SQUARE_SIZE - 10))
+            elif el.id == macro.GREEN_APPLE:
+                win.fill("green", (el.x + 5, el.y + 5, macro.SQUARE_SIZE - 10, macro.SQUARE_SIZE - 10))
+            elif el.id == macro.HEAD:
+                win.fill("yellow", (el.x + 5, el.y + 5, macro.SQUARE_SIZE - 10, macro.SQUARE_SIZE - 10))
+            elif el.id == macro.BODY:
+                win.fill("orange", (el.x + 5, el.y + 5, macro.SQUARE_SIZE - 10, macro.SQUARE_SIZE - 10))
+            elif el.id == macro.TAIL:
+                win.fill("red", (el.x + 5, el.y + 5, macro.SQUARE_SIZE - 10, macro.SQUARE_SIZE - 10))
 
-def init_board(board):
-    init_walls(board)
-    init_snake(board)
-    place_food(board, RED_APPLE)
-    place_food(board, GREEN_APPLE)
-    place_food(board, GREEN_APPLE)
-
-def init_walls(board):
-    for i, a in enumerate(board):
-        if i == 0 or i == 10:
-            for el in board[i]:
-                el.id = 1
-        else:
-            a[0].id = 1
-            a[10].id = 1
-
+#protect from no tail
 def find_square_by_id(board, target_id):
     for ri, row in enumerate(board):
         for si, square in enumerate(row):
@@ -116,61 +28,82 @@ def find_square_by_id(board, target_id):
                 return ri, si, square
 
 def find_square_by_dir(board, x, y, dir):
-    if dir == RIGHT:
+    if dir == macro.RIGHT:
         return board[x][y + 1]
-    elif dir == LEFT:
+    elif dir == macro.LEFT:
         return board[x][y - 1]
-    elif dir == UP:
+    elif dir == macro.UP:
         return board[x - 1][y]
-    elif dir == DOWN:
+    elif dir == macro.DOWN:
         return board[x + 1][y]
 
 def move_snake(board, dir):
-    head_x, head_y, head = find_square_by_id(board, HEAD)
-    tail_x, tail_y, tail = find_square_by_id(board, TAIL)
+    head_x, head_y, head = find_square_by_id(board, macro.HEAD)
+    tail_x, tail_y, tail = find_square_by_id(board, macro.TAIL)
     head.dir = dir
-    head.id = BODY
-    s = find_square_by_dir(board, head_x, head_y, dir)
-    id = s.id
-    if id == GREEN_APPLE or id == RED_APPLE:
-        print("bigger")
+    head.id = macro.BODY
+    target = find_square_by_dir(board, head_x, head_y, dir)
+    id = target.id
+    target.id = macro.HEAD
+    if id == macro.GREEN_APPLE:
+        place_food(board, macro.GREEN_APPLE)
+        macro.length += 1
         return True
-    elif id == BODY or id == TAIL or id == WALL:
-        print("dead")
+    elif id == macro.RED_APPLE:
+        macro.length -= 1
+        if macro.length == 0:
+            return False
+        s = find_square_by_dir(board, tail_x, tail_y, tail.dir)
+        tail.id = macro.EMPTY
+        tail.dir = -1
+        if macro.length > 1:
+            s.id = macro.TAIL
+            x, y, _ = find_square_by_id(board, macro.TAIL)
+            s2 = find_square_by_dir(board, x ,y ,s.dir)
+            s.dir = -1
+            s.id = macro.EMPTY
+            s2.id = macro.TAIL
+        else:
+            head.id = macro.EMPTY
+            head.dir = -1
+        place_food(board, macro.RED_APPLE)
+        return True
+    elif id == macro.BODY or id == macro.TAIL or id == macro.WALL:
         return False
-    s.id = HEAD
     s = find_square_by_dir(board, tail_x, tail_y, tail.dir)
     tail.dir = -1
-    tail.id = EMPTY
-    s.id = TAIL
+    tail.id = macro.EMPTY
+    s.id = macro.TAIL
     return True
 
 def main():
-    board = [[square(x * SQUARE_SIZE, y * SQUARE_SIZE, 0, -1) for x in range(11)] for y in range(11)]
+    board = [[macro.square(x * macro.SQUARE_SIZE, y * macro.SQUARE_SIZE, 0, -1) for x in range(11)] for y in range(11)]
+    py.init()
+    win = py.display.set_mode((macro.WIDTH, macro.HEIGHT))
+    py.display.set_caption("Snake Game")  
     running = True
     init_board(board)
     while running:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
+        for event in py.event.get():
+            if event.type == py.QUIT:
                 running = False
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_UP:
-                    running = move_snake(board, UP)
-                elif event.key == pygame.K_DOWN:
-                    running = move_snake(board, DOWN)
-                elif event.key == pygame.K_LEFT:
-                    running = move_snake(board, LEFT)
-                elif event.key == pygame.K_RIGHT:
-                    running = move_snake(board, RIGHT)
-                elif event.key == pygame.K_ESCAPE:
+            elif event.type == py.KEYDOWN:
+                if event.key == py.K_UP:
+                    running = move_snake(board, macro.UP)
+                elif event.key == py.K_DOWN:
+                    running = move_snake(board, macro.DOWN)
+                elif event.key == py.K_LEFT:
+                    running = move_snake(board, macro.LEFT)
+                elif event.key == py.K_RIGHT:
+                    running = move_snake(board, macro.RIGHT)
+                elif event.key == py.K_ESCAPE:
                     running = False
-                # render(board)
         win.fill('black')
-        draw_grid_of_squares(board)
-        render(board)
-        pygame.display.update()
+        draw_grid_of_squares(board, win)
+        render(board, win)
+        py.display.update()
 
-    pygame.quit()
+    py.quit()
 
 if __name__ == '__main__':
     main()
