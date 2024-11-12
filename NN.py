@@ -107,11 +107,10 @@ class MLP:
                 patience_counter = 0
             else:
                 patience_counter += 1
-
+            
             if patience_counter >= patience:
                 print(f'Early stopping at epoch {epoch}/{epochs} - Best Val_loss: {best_loss:.4f}')
                 break
-            
             if epoch % 10 == 0:
                 print(f'Epoch {epoch}/{epochs} - Loss: {loss:.4f} - Val_loss: {test_loss:.4f} - Accuracy: {self.accuracy_history[epoch] * 100:.2f} ')
 

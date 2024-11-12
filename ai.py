@@ -1,6 +1,7 @@
 from utils import find_square_by_id, print_board
 import macro
 import numpy as np
+from DQN import DQNAgent
 
 def get_distance_to_item(line: list, target_items: int, reverse: bool) -> int:
     dist = 0
@@ -14,18 +15,16 @@ def get_distance_to_item(line: list, target_items: int, reverse: bool) -> int:
             dist = 0
     return len(line)
 
-def find_visible_square(board: list) -> list:
-    x, y, _ = find_square_by_id(board, macro.HEAD)
-    vertical = np.array(board)[:, y]
-    horizontal = np.array(board)[x, :]
-    return vertical, horizontal
 
 def find_id(line: list, item: int) -> int:
     for i, square in enumerate(line):
         if square.id == item:
             return i
 
-def get_state(vertical: list, horizontal: list) -> list:
+def get_state(board: list) -> list:
+    x, y, _ = find_square_by_id(board, macro.HEAD)
+    vertical = np.array(board)[:, y]
+    horizontal = np.array(board)[x, :]
     distance_to_obstacle_up = get_distance_to_item(vertical, {macro.WALL, macro.BODY, macro.TAIL}, False)
     distance_to_obstacle_down = get_distance_to_item(vertical, {macro.WALL, macro.BODY, macro.TAIL}, True)
     distance_to_obstacle_left = get_distance_to_item(horizontal, {macro.WALL, macro.BODY, macro.TAIL}, False)
@@ -47,9 +46,8 @@ def get_state(vertical: list, horizontal: list) -> list:
         int(food_up), int(food_down), int(food_left), int(food_right),
     ]
 
-def ai_decision(board: list) -> int:
+def ai_decision(board: list, agent: DQNAgent) -> int:
     vertical, horizontal = find_visible_square(board)
     state = get_state(vertical, horizontal)
-    print_board(board)
-    print(state)
-    exit(0)
+    action = agent.act(state)
+    return action
