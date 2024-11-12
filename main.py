@@ -1,8 +1,12 @@
 import pygame as py
 import macro
 from init import init_board, draw_grid_of_squares, place_food
+from ai import ai_decision
+from utils import find_square_by_dir, find_square_by_id
 
 def render(board, win):
+    win.fill('black')
+    draw_grid_of_squares(board, win)
     for r in board:
         for el in r:
             if(el.id == macro.EMPTY):
@@ -19,23 +23,6 @@ def render(board, win):
                 win.fill("orange", (el.x + 5, el.y + 5, macro.SQUARE_SIZE - 10, macro.SQUARE_SIZE - 10))
             elif el.id == macro.TAIL:
                 win.fill("red", (el.x + 5, el.y + 5, macro.SQUARE_SIZE - 10, macro.SQUARE_SIZE - 10))
-
-#protect from no tail
-def find_square_by_id(board, target_id):
-    for ri, row in enumerate(board):
-        for si, square in enumerate(row):
-            if square.id == target_id:
-                return ri, si, square
-
-def find_square_by_dir(board, x, y, dir):
-    if dir == macro.RIGHT:
-        return board[x][y + 1]
-    elif dir == macro.LEFT:
-        return board[x][y - 1]
-    elif dir == macro.UP:
-        return board[x - 1][y]
-    elif dir == macro.DOWN:
-        return board[x + 1][y]
 
 def move_snake(board, dir):
     head_x, head_y, head = find_square_by_id(board, macro.HEAD)
@@ -82,12 +69,13 @@ def main():
     win = py.display.set_mode((macro.WIDTH, macro.HEIGHT))
     py.display.set_caption("Snake Game")  
     running = True
+    manual = False
     init_board(board)
     while running:
         for event in py.event.get():
             if event.type == py.QUIT:
                 running = False
-            elif event.type == py.KEYDOWN:
+            elif event.type == py.KEYDOWN and manual == True:
                 if event.key == py.K_UP:
                     running = move_snake(board, macro.UP)
                 elif event.key == py.K_DOWN:
@@ -98,11 +86,10 @@ def main():
                     running = move_snake(board, macro.RIGHT)
                 elif event.key == py.K_ESCAPE:
                     running = False
-        win.fill('black')
-        draw_grid_of_squares(board, win)
+        if manual == False:
+            move = ai_decision(board)
         render(board, win)
         py.display.update()
-
     py.quit()
 
 if __name__ == '__main__':
