@@ -6,7 +6,7 @@ learning_rate = 0.001
 gamma = 0.95
 epsilon = 1.0
 epsilon_min = 0.01
-epsilon_decay = 0.999  # Slower decay for more gradual exploration shift
+epsilon_decay = 0.999
 batch_size = 32
 max_memory = 10000
 
@@ -68,10 +68,10 @@ class DQNAgent:
         self.action_size = action_size
         self.epsilon = epsilon
         self.memory = ReplayBuffer(max_memory)
-        self.model = NeuralNetwork(state_size, 24, action_size)
+        self.model = NeuralNetwork(state_size, 100, action_size)
 
     def act(self, state):
-        state = np.reshape(state, [1, self.state_size])  # Ensure correct shape
+        state = np.reshape(state, [1, self.state_size])
         if np.random.rand() <= self.epsilon:
             return random.randrange(self.action_size)
         q_values = self.model.predict(state)
@@ -83,7 +83,6 @@ class DQNAgent:
 
         minibatch = self.memory.sample(batch_size)
         
-        # Prepare batches for efficient training
         states = np.array([np.reshape(s[0], [1, self.state_size]) for s in minibatch]).squeeze()
         targets = self.model.predict(states)
         
@@ -91,7 +90,6 @@ class DQNAgent:
             target = reward if done else reward + gamma * np.max(self.model.predict(np.reshape(next_state, [1, self.state_size]))[0])
             targets[i][action] = target
 
-        # Train on the batch
         self.model.train(states, targets, learning_rate)
         
         if self.epsilon > epsilon_min:

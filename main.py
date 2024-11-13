@@ -1,7 +1,7 @@
 import pygame as py
 import macro
 from init import init_board, draw_grid_of_squares, place_food
-from ai import ai_decision, get_state
+from ai import get_state
 from utils import find_square_by_dir, find_square_by_id
 from DQN import DQNAgent
 import joblib as jb
@@ -27,18 +27,46 @@ def render(board: list, win):
             elif el.id == macro.TAIL:
                 win.fill("red", (el.x + 5, el.y + 5, macro.SQUARE_SIZE - 10, macro.SQUARE_SIZE - 10))
 
-def calculate_reward(board: list, head: macro.square, target: macro.square, dir: int) -> int:
+def calculate_reward(board: list, head: macro.square, target: macro.square, dir: int, isCloser: bool, dist: int) -> float:
     if target.id == macro.GREEN_APPLE:
         return 10
-    return 1
+    if isCloser:
+        return 0.5 / dist
+    return -0.6
+
+def find_length(board: list) -> int:
+    l = 0
+    for line in board:
+        for square in line:
+            if square.id in {macro.HEAD, macro.BODY, macro.TAIL}:
+                l += 1
+    return l
+
+def find_apples(board: list) -> tuple[int, int, int, int]:
+    coord = []
+    for x, line in enumerate(board):
+        for y, square in enumerate(line):
+            if square.id == macro.GREEN_APPLE:
+                coord.extend((x, y))
+    return tuple(coord)
+
+def get_distance(x1: int, y1: int, x2: int, y2: int) -> int:
+    return abs((x2 - x1)) + abs((y2 - y1))
+
+def find_dist(board:list, head_x: int, head_y: int, target_x: int, target_y: int) -> tuple[int, int]:
+    apple_x1, apple_y1, apple_x2, apple_y2 = find_apples(board)
+    dist_before = min(get_distance(apple_x1, apple_y1, head_x, head_y), get_distance(apple_x2, apple_y2, head_x, head_y))
+    dist_after = min(get_distance(apple_x1, apple_y1, target_x, target_y), get_distance(apple_x2, apple_y2, target_x, target_y))
+    return dist_before, dist_after
 
 def move_snake(board: list, dir: int) -> tuple[int, bool]:
     head_x, head_y, head = find_square_by_id(board, macro.HEAD)
     tail_x, tail_y, tail = find_square_by_id(board, macro.TAIL)
+    target_x, target_y, target = find_square_by_dir(board, head_x, head_y, dir)
+    prev_dist, curr_dist = find_dist(board, head_x, head_y, target_x, target_y)
+    reward = calculate_reward(board, head, target, dir, prev_dist < curr_dist, curr_dist)
     head.dir = dir
     head.id = macro.BODY
-    target = find_square_by_dir(board, head_x, head_y, dir)
-    reward = calculate_reward(board, head, target, dir)
     id = target.id
     target.id = macro.HEAD
     if id == macro.GREEN_APPLE:
@@ -49,13 +77,13 @@ def move_snake(board: list, dir: int) -> tuple[int, bool]:
         macro.length -= 1
         if macro.length == 0:
             return reward, False
-        s = find_square_by_dir(board, tail_x, tail_y, tail.dir)
+        _, _, s = find_square_by_dir(board, tail_x, tail_y, tail.dir)
         tail.id = macro.EMPTY
         tail.dir = -1
         if macro.length > 1:
             s.id = macro.TAIL
             x, y, _ = find_square_by_id(board, macro.TAIL)
-            s2 = find_square_by_dir(board, x ,y ,s.dir)
+            _, _, s2 = find_square_by_dir(board, x ,y ,s.dir)
             s.dir = -1
             s.id = macro.EMPTY
             s2.id = macro.TAIL
@@ -66,7 +94,7 @@ def move_snake(board: list, dir: int) -> tuple[int, bool]:
         return reward, True
     elif id == macro.BODY or id == macro.TAIL or id == macro.WALL:
         return reward, False
-    s = find_square_by_dir(board, tail_x, tail_y, tail.dir)
+    _, _, s = find_square_by_dir(board, tail_x, tail_y, tail.dir)
     tail.dir = -1
     tail.id = macro.EMPTY
     s.id = macro.TAIL
@@ -102,7 +130,7 @@ def main():
             py.display.update()
     else:
         agent = DQNAgent(12, 4)
-    iteration = 500
+    iteration = 100000
     for i in range(iteration):
         try:
             board = [[macro.square(x * macro.SQUARE_SIZE, y * macro.SQUARE_SIZE, 0, -1) for x in range(11)] for y in range(11)]
@@ -132,7 +160,7 @@ def main():
                 agent.train(32)
                 if not running:
                     if i > iteration - iteration:
-                        print(f"Episode #{i} is over with a total score of {total_reward} after {steps} steps")
+                        print(f"Episode #{i} is over with a total score of {total_reward:.1f} and length {find_length(board)} after {steps} steps")
                     break
                 steps += 1
         except:

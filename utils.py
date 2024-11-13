@@ -8,13 +8,13 @@ def find_square_by_id(board, target_id):
 
 def find_square_by_dir(board, x, y, dir):
     if dir == macro.RIGHT:
-        return board[x][y + 1]
+        return x, y+1, board[x][y + 1]
     elif dir == macro.LEFT:
-        return board[x][y - 1]
+        return x, y-1,board[x][y - 1]
     elif dir == macro.UP:
-        return board[x - 1][y]
+        return x-1, y,board[x - 1][y]
     elif dir == macro.DOWN:
-        return board[x + 1][y]
+        return x+1, y,board[x + 1][y]
 
 def print_board(board: list):
     for line in board:

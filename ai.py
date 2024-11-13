@@ -45,9 +45,3 @@ def get_state(board: list) -> list:
         distance_to_food_up, distance_to_food_down, distance_to_food_left, distance_to_food_right,
         int(food_up), int(food_down), int(food_left), int(food_right),
     ]
-
-def ai_decision(board: list, agent: DQNAgent) -> int:
-    vertical, horizontal = find_visible_square(board)
-    state = get_state(vertical, horizontal)
-    action = agent.act(state)
-    return action
