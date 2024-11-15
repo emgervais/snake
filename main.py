@@ -106,7 +106,6 @@ def move_snake(board: list, dir: int) -> tuple[int, bool]:
     elif id in {macro.BODY, macro.WALL, macro.TAIL}:
         return reward, False
 
-    # Update the tail if snake length > 1
     if macro.length > 1:
         _, _, s = find_square_by_dir(board, tail_x, tail_y, tail.dir)
         tail.dir = -1
@@ -115,26 +114,18 @@ def move_snake(board: list, dir: int) -> tuple[int, bool]:
 
     return reward, True
 
-def key_hook():
-    global delay
-    try:
-        while True:
-            if close:
-                break
-            for event in py.event.get():
-                if event.type == py.KEYDOWN:
-                    if event.key == py.K_RIGHT:
-                        delay += 0.1
-                    elif event.key == py.K_LEFT and delay - 0.1 >= 0:
-                        delay -= 0.1
-                    elif event.key == py.K_ESCAPE:
-                        raise exitTrainingProgram
-                time.sleep(0.01)
-            time.sleep(0.05)
-    except exitTrainingProgram:
-        print(f"Training was ended")
-        py.quit()
-        os.kill(os.getpid(), signal.SIGINT)
+def key_hook(delay: float, agent: DQNAgent) -> float:
+    for event in py.event.get():
+        if event.type == py.KEYDOWN:
+            if event.key == py.K_LEFT and delay - 0.05 >= 0:
+                delay -= 0.05
+            elif event.key == py.K_RIGHT:
+                delay += 0.05
+            elif event.key == py.K_s:
+                jb.dump(agent, "model")
+            elif event.key == py.K_ESCAPE:
+                raise exitTrainingProgram
+    return delay
 
 def ai_decision(board:list, agent: DQNAgent, win=None, viz: bool=False) -> tuple[float, bool]:
     state = get_state(board)
@@ -149,28 +140,8 @@ def ai_decision(board:list, agent: DQNAgent, win=None, viz: bool=False) -> tuple
     agent.train(32)
     return reward, running
 
-delay = 0
-def main():
-    global close
-    close = False
-    viz = False
-    iteration = 0
-    win = None
-    if '-v' in sys.argv:
-        viz = True
-        py.init()
-        win = py.display.set_mode((macro.WIDTH, macro.HEIGHT))
-        py.display.set_caption("Snake Game") 
-        keyhook_thread = threading.Thread(target=key_hook)
-        keyhook_thread.start()
-    try:
-        i = sys.argv.index('-i') + 1
-        iteration = int(sys.argv[i])
-        if iteration <= 0:
-            print(f"Please enter the amount of iterations greater than 0")
-    except:
-        print(f"Please enter the amount of iterations with the flag -i num_of_iterations")
-        exit(1)
+def game(iteration: int, viz: bool, win):
+    delay = 0
     agent = DQNAgent(12, 4)
     try:
         for i in range(iteration):
@@ -181,6 +152,7 @@ def main():
             steps = 0
             total_reward = 0
             while 1:
+                delay = key_hook(delay, agent)
                 time.sleep(delay)
                 reward, running = ai_decision(board, agent, win, viz)
                 total_reward += reward
@@ -195,6 +167,32 @@ def main():
         py.quit()
         exit(0)
     jb.dump(agent, "model.ml")
+
+def main():
+    global close
+    close = False
+    viz = False
+    iteration = 0
+    win = None
+
+    try:
+        i = sys.argv.index('-i') + 1
+        iteration = int(sys.argv[i])
+        if iteration <= 0:
+            print(f"Please enter the amount of iterations greater than 0")
+    except:
+        print(f"Please enter the amount of iterations with the flag -i num_of_iterations")
+        exit(1)
+
+    py.init()
+    if '-v' in sys.argv:
+        viz = True
+        win = py.display.set_mode((macro.WIDTH, macro.HEIGHT))
+        py.display.set_caption("Snake Game") 
+        # keyhook_thread = threading.Thread(target=key_hook)
+        # keyhook_thread.start()
+
+    game(iteration, viz, win)
     py.quit()
     exit(0)
 
