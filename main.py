@@ -70,30 +70,35 @@ def move_snake(board: list, dir: int) -> tuple[int, bool]:
     head_x, head_y, head = find_square_by_id(board, macro.HEAD)
     tail_x, tail_y, tail = find_square_by_id(board, macro.TAIL)
     target_x, target_y, target = find_square_by_dir(board, head_x, head_y, dir)
-    prev_dist, curr_dist = find_dist(board, head_x, head_y, target_x, target_y)
 
-    # Calculate reward based on distances and direction
+    prev_dist, curr_dist = find_dist(board, head_x, head_y, target_x, target_y)
     reward = calculate_reward(board, head, target, dir, prev_dist < curr_dist, curr_dist)
 
-    id = target.id
-    target.id = macro.HEAD  # Move the head
-    head.dir = dir
-    head.id = macro.BODY  # Update previous head position to body
+    id = target.id #save target square id
+    target.id = macro.HEAD #target square become head
+    head.dir = dir #indicate pas square direction (to head)
+    head.id = macro.BODY #replace head space by body
+    #recap target square is now the head and previous square is body with the right direction
 
-    if macro.length == 1:
+    if macro.length == 1: #if length is one we remove the body as there is only a head
         head.dir = -1
-        head.id = macro.EMPTY  # Reset head if snake is reduced to single length
+        head.id = macro.EMPTY
 
-    # Handling various targets
     if id == macro.GREEN_APPLE:
-        place_food(board, macro.GREEN_APPLE)
+        if macro.length == 1:#id length is one only head so need to add tail o previous emlpacement of head
+            head.dir = dir
+            head.id = macro.TAIL
+        #if not 1 no need to do anything as head was replace by a body so tail dont move
+        place_food(board, macro.GREEN_APPLE)#replace an apple
         macro.length += 1
         return reward, True
+
     elif id == macro.RED_APPLE:
         macro.length -= 1
-        if macro.length == 0:
+        if macro.length == 0: #if length was one return with dead
             return reward, False
-        _, _, s = find_square_by_dir(board, tail_x, tail_y, tail.dir)
+
+        _, _, s = find_square_by_dir(board, tail_x, tail_y, tail.dir)#find the tail no need to check if only one as  it died
         tail.id = macro.EMPTY
         tail.dir = -1
         if macro.length > 1:
