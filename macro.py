@@ -28,4 +28,4 @@ class square:
     id: int
     dir: int
 
-length = 3
+global length

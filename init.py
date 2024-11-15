@@ -45,6 +45,7 @@ def init_snake(board: list):
 
 def init_board() -> list:
     board = [[macro.square(x * macro.SQUARE_SIZE, y * macro.SQUARE_SIZE, 0, -1) for x in range(11)] for y in range(11)]
+    macro.length = 3
     init_walls(board)
     init_snake(board)
     place_food(board, macro.RED_APPLE)

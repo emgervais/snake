@@ -7,9 +7,6 @@ from DQN import DQNAgent
 import joblib as jb
 import sys
 import time
-import threading
-import os
-import signal
 
 class exitTrainingProgram(Exception): 
     pass
@@ -98,24 +95,28 @@ def move_snake(board: list, dir: int) -> tuple[int, bool]:
         if macro.length == 0: #if length was one return with dead
             return reward, False
 
-        _, _, s = find_square_by_dir(board, tail_x, tail_y, tail.dir)#find the tail no need to check if only one as  it died
+        x, y, s = find_square_by_dir(board, tail_x, tail_y, tail.dir)#find the next square from tail no need to check if only one as  it died
         tail.id = macro.EMPTY
-        tail.dir = -1
-        if macro.length > 1:
-            s.id = macro.TAIL
-        else:
+        tail.dir = -1#remove the tail
+        if macro.length > 1: #if the length is not one replace body by tail---------HEAD-BODY-BODY-BODY-EMPTY -----------HEAD-BODY-TAIL
+            _,_,s2 = find_square_by_dir(board, x, y, s.dir)#
+            s.id = macro.EMPTY
+            s.dir = -1 #---------HEAD-BODY-BODY-EMPTY-EMPTY -----------HEAD-BODY-TAIL
+            s2.id = macro.TAIL#---------HEAD-BODY-TAIL-EMPTY-EMPTY -----------HEAD-BODY-TAIL
+        else:#else (is only one length) remove also tail
             head.id = macro.EMPTY
             head.dir = -1
         place_food(board, macro.RED_APPLE)
         return reward, True
-    elif id in {macro.BODY, macro.WALL, macro.TAIL}:
+
+    elif id in {macro.BODY, macro.WALL, macro.TAIL}:#if hit obstacle dead
         return reward, False
 
-    if macro.length > 1:
-        _, _, s = find_square_by_dir(board, tail_x, tail_y, tail.dir)
+    if macro.length > 1: #if didnt hit anything and is not one
+        _, _, s = find_square_by_dir(board, tail_x, tail_y, tail.dir) #find tail next
         tail.dir = -1
-        tail.id = macro.EMPTY
-        s.id = macro.TAIL
+        tail.id = macro.EMPTY #empty tail
+        s.id = macro.TAIL #next square is tail
 
     return reward, True
 
@@ -140,7 +141,10 @@ def ai_decision(board:list, agent: DQNAgent, win=None, viz: bool=False) -> tuple
     if viz:
         render(board, win)
         py.display.update()
-    next_state = get_state(board)
+    if running:
+        next_state = get_state(board)
+    else:
+        next_state = [0] * 12
     agent.memory.store(state, action, reward, next_state, running)
     agent.train(32)
     return reward, running
@@ -166,11 +170,11 @@ def game(iteration: int, viz: bool, win):
                         print(f"Episode #{i} is over with a total score of {total_reward:.1f} and length {find_length(board)} after {steps} steps")
                     break
                 steps += 1
-    except KeyboardInterrupt as e:
+    except KeyboardInterrupt or exitTrainingProgram as e:
         print(e)
-        close = True
         py.quit()
         exit(0)
+    
     jb.dump(agent, "model.ml")
 
 def main():
