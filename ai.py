@@ -2,6 +2,9 @@ from utils import find_square_by_id, print_board
 import macro
 import numpy as np
 from DQN import DQNAgent
+import pygame as py
+from game import move_snake
+from render import render
 
 def get_distance_to_item(line: list, target_items: int, reverse: bool) -> int:
     dist = 0
@@ -45,3 +48,19 @@ def get_state(board: list) -> list:
         distance_to_food_up, distance_to_food_down, distance_to_food_left, distance_to_food_right,
         int(food_up), int(food_down), int(food_left), int(food_right),
     ]
+
+def ai_decision(board:list, agent: DQNAgent, win=None, viz: bool=False) -> tuple[float, bool]:
+    state = get_state(board)
+    action = agent.act(state)
+    reward, running = move_snake(board, action)
+    reward = reward if running else -10
+    if viz:
+        render(board, win)
+        py.display.update()
+    if running:
+        next_state = get_state(board)
+    else:
+        next_state = [0] * 12
+    agent.memory.store(state, action, reward, next_state, running)
+    agent.train(32)
+    return reward, running
