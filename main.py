@@ -30,6 +30,7 @@ def game(iteration: int, viz: bool, win):
     agent = DQNAgent(12, 4)
     try:
         for i in range(iteration):
+            food_eaten = 0
             board = init_board()
             if viz:
                 render(board, win)

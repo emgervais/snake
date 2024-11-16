@@ -2,13 +2,13 @@ import numpy as np
 import random
 from collections import deque
 
-learning_rate = 0.001
+learning_rate = 0.01
 gamma = 0.95
 epsilon = 1.0
 epsilon_min = 0.01
 epsilon_decay = 0.999
-batch_size = 32
-max_memory = 10000
+batch_size = 64
+max_memory = 1000
 
 class NeuralNetwork:
     def __init__(self, input_size, hidden_size, output_size):
@@ -68,7 +68,7 @@ class DQNAgent:
         self.action_size = action_size
         self.epsilon = epsilon
         self.memory = ReplayBuffer(max_memory)
-        self.model = NeuralNetwork(state_size, 100, action_size)
+        self.model = NeuralNetwork(state_size, 24, action_size)
 
     def act(self, state):
         state = np.reshape(state, [1, self.state_size])

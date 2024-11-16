@@ -53,7 +53,7 @@ def ai_decision(board:list, agent: DQNAgent, win=None, viz: bool=False) -> tuple
     state = get_state(board)
     action = agent.act(state)
     reward, running = move_snake(board, action)
-    reward = reward if running else -10
+    reward = reward if running else -1
     if viz:
         render(board, win)
         py.display.update()

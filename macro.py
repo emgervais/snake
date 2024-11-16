@@ -27,5 +27,3 @@ class square:
     y: float
     id: int
     dir: int
-
-global length
