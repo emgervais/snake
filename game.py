@@ -4,8 +4,8 @@ from init import place_food
 
 def calculate_reward(board: list, head: macro.square, target: macro.square, dir: int, isCloser: bool, dist: int) -> float:
     if target.id == macro.GREEN_APPLE:
-        return 1
-    return -0.01
+        return 10
+    return 0.01
 
 def green_apple(board: list, head: macro.square, dir: int, length: int):
     if length == 1:
@@ -38,7 +38,7 @@ def move_head(target: macro.square, head: macro.square, dir: int, length: int) -
         head.id = macro.EMPTY
     return id
 
-def move_snake(board: list, dir: int) -> tuple[int, bool]:
+def move_snake(board: list, dir: int, food_eaten: int) -> tuple[int, bool]:
     head_x, head_y, head = find_square_by_id(board, macro.HEAD)
     tail_x, tail_y, tail = find_square_by_id(board, macro.TAIL)
     target_x, target_y, target = find_square_by_dir(board, head_x, head_y, dir)
@@ -50,16 +50,17 @@ def move_snake(board: list, dir: int) -> tuple[int, bool]:
 
     if id == macro.GREEN_APPLE:
         green_apple(board, head, dir, length)
-        return reward, True
+        food_eaten += 1
+        return reward, True, food_eaten
 
     elif id == macro.RED_APPLE:
         if length == 1:
-            return reward, False
+            return reward, False, food_eaten
         red_apple(board, tail_x, tail_y, tail, head, length)
-        return reward, True
+        return reward, True, food_eaten
 
     elif id in {macro.BODY, macro.WALL, macro.TAIL}:
-        return reward, False
+        return reward, False, food_eaten
 
     if length > 1:
         _, _, s = find_square_by_dir(board, tail_x, tail_y, tail.dir)
@@ -67,4 +68,4 @@ def move_snake(board: list, dir: int) -> tuple[int, bool]:
         tail.id = macro.EMPTY
         s.id = macro.TAIL
 
-    return reward, True
+    return reward, True, food_eaten

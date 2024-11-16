@@ -27,10 +27,11 @@ def key_hook(delay: float, agent: DQNAgent) -> float:
 
 def game(iteration: int, viz: bool, win):
     delay = 0
-    agent = DQNAgent(12, 4)
+    agent = DQNAgent(8, 4)
     try:
         for i in range(iteration):
             food_eaten = 0
+            counter = 0
             board = init_board()
             if viz:
                 render(board, win)
@@ -40,7 +41,7 @@ def game(iteration: int, viz: bool, win):
             while 1:
                 delay = key_hook(delay, agent)
                 time.sleep(delay)
-                reward, running = ai_decision(board, agent, win, viz)
+                reward, running, food_eaten, counter = ai_decision(board, agent, food_eaten, steps, counter, win, viz)
                 total_reward += reward
                 if not running:
                     if i > iteration - iteration:

@@ -38,29 +38,31 @@ def get_state(board: list) -> list:
     distance_to_food_left = get_distance_to_item(horizontal[::-1], {macro.GREEN_APPLE}, False)
     distance_to_food_right = get_distance_to_item(horizontal, {macro.GREEN_APPLE}, True)
 
-    food_up = macro.GREEN_APPLE in vertical[::-1]
-    food_down =  macro.GREEN_APPLE in vertical
-    food_left =  macro.GREEN_APPLE in horizontal[::-1]
-    food_right =  macro.GREEN_APPLE in horizontal
 
     return [
         distance_to_obstacle_up, distance_to_obstacle_down, distance_to_obstacle_left, distance_to_obstacle_right,
         distance_to_food_up, distance_to_food_down, distance_to_food_left, distance_to_food_right,
-        int(food_up), int(food_down), int(food_left), int(food_right),
     ]
 
-def ai_decision(board:list, agent: DQNAgent, win=None, viz: bool=False) -> tuple[float, bool]:
+def ai_decision(board:list, agent: DQNAgent, food_eaten: int, steps: int, counter:int, win=None, viz: bool=False) -> tuple[float, bool]:
     state = get_state(board)
     action = agent.act(state)
-    reward, running = move_snake(board, action)
-    reward = reward if running else -1
+    prev_food = food_eaten
+    reward, running, food_eaten = move_snake(board, action, food_eaten)
+    if prev_food == food_eaten:
+        counter += 1
+    else:
+        counter = 0
+    if counter >= 50:
+        running = False
+    reward = reward if running else -10
     if viz:
         render(board, win)
         py.display.update()
     if running:
         next_state = get_state(board)
     else:
-        next_state = [0] * 12
+        next_state = [0] * len(state)
     agent.memory.store(state, action, reward, next_state, running)
-    agent.train(32)
-    return reward, running
+    agent.train(64)
+    return reward, running, food_eaten, counter
