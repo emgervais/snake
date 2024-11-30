@@ -3,14 +3,15 @@ import random
 from collections import deque
 
 # Hyperparameters
-LEARNING_RATE = 0.001
-GAMMA = 0.99
+LEARNING_RATE = 0.0005
+GAMMA = 0.95
 EPSILON = 1.0
-EPSILON_MIN = 0
+EPSILON_MIN = 0.01
 EPSILON_DECAY = 0.995
-BATCH_SIZE = 64
-MAX_MEMORY = 10000
-HIDDEN_SIZE = 128
+MAX_MEMORY = 50000
+HIDDEN_SIZE = 256
+BATCH_SIZE = 32
+TARGET_UPDATE_FREQUENCY = 1000
 
 class NeuralNetwork:
     def __init__(self, input_size, hidden_size, output_size):
@@ -23,12 +24,18 @@ class NeuralNetwork:
         
     def relu(self, x):
         return np.maximum(0, x)
-    
+
+    def dropout(self, x, rate):
+        mask = (np.random.rand(*x.shape) > rate).astype(np.float32)
+        return x * mask
+
     def forward(self, x):
         self.z1 = np.dot(x, self.W1) + self.b1
         self.a1 = self.relu(self.z1)
+        # self.a1 = self.dropout(self.a1, rate=0.2)
         self.z2 = np.dot(self.a1, self.W2) + self.b2
         self.a2 = self.relu(self.z2)
+        # self.a2 = self.dropout(self.a2, rate=0.2)
         self.z3 = np.dot(self.a2, self.W3) + self.b3
         return self.z3
     
@@ -76,7 +83,7 @@ class ReplayBuffer:
         return len(self.buffer) >= batch_size
 
 class DQNAgent:
-    def __init__(self, state_size, action_size):
+    def __init__(self, state_size=8, action_size=4):
         self.state_size = state_size
         self.action_size = action_size
         self.epsilon = EPSILON
@@ -84,6 +91,7 @@ class DQNAgent:
         self.model = NeuralNetwork(state_size, HIDDEN_SIZE, action_size)
         self.target_model = NeuralNetwork(state_size, HIDDEN_SIZE, action_size)
         self.update_target_model()
+        self.steps = 0
         
     def update_target_model(self):
         self.target_model.W1 = self.model.W1.copy()
@@ -100,11 +108,11 @@ class DQNAgent:
         q_values = self.model.predict(state)
         return np.argmax(q_values[0])
     
-    def train(self, batch_size):
-        if not self.memory.can_sample(batch_size):
+    def train(self):
+        if not self.memory.can_sample(BATCH_SIZE):
             return
         
-        minibatch = self.memory.sample(batch_size)
+        minibatch = self.memory.sample(BATCH_SIZE)
         states = np.array([s[0] for s in minibatch])
         next_states = np.array([s[3] for s in minibatch])
         actions = np.array([s[1] for s in minibatch])
@@ -115,7 +123,7 @@ class DQNAgent:
         next_q_values = self.target_model.predict(next_states)
         
         targets = current_q_values.copy()
-        for i in range(batch_size):
+        for i in range(BATCH_SIZE):
             if dones[i]:
                 target = rewards[i]
             else:
@@ -123,10 +131,9 @@ class DQNAgent:
             targets[i][actions[i]] = target
         
         self.model.train(states, targets, LEARNING_RATE)
-        
+
+        self.steps += 1
+        if self.steps % TARGET_UPDATE_FREQUENCY == 0:
+            self.update_target_model()
         if self.epsilon > EPSILON_MIN:
             self.epsilon *= EPSILON_DECAY
-
-    def remember(self, state, action, reward, next_state, done):
-        self.memory.store(state, action, reward, next_state, done)
-

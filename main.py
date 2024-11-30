@@ -28,6 +28,10 @@ def key_hook(delay: float, agent: DQNAgent) -> float:
 def game(iteration: int, viz: bool, win):
     delay = 0
     agent = DQNAgent(8, 4)
+    if "-p" in sys.argv:
+        agent = jb.load("model.ml")
+        agent.epsilon = -1
+        delay = 1
     try:
         for i in range(iteration):
             food_eaten = 0
@@ -43,6 +47,7 @@ def game(iteration: int, viz: bool, win):
                 time.sleep(delay)
                 reward, running, food_eaten, counter = ai_decision(board, agent, food_eaten, steps, counter, win, viz)
                 total_reward += reward
+                # print(total_reward)
                 if not running:
                     if i > iteration - iteration:
                         print(f"Episode #{i} is over with a total score of {total_reward:.1f} and length {find_length(board)} after {steps} steps")
@@ -51,6 +56,7 @@ def game(iteration: int, viz: bool, win):
     except KeyboardInterrupt or exitTrainingProgram as e:
         print(e)
         py.quit()
+        jb.dump(agent, "model.ml")
         exit(0)
     
     jb.dump(agent, "model.ml")

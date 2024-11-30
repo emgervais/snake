@@ -5,6 +5,7 @@ from DQN import DQNAgent
 import pygame as py
 from game import move_snake
 from render import render
+import sys
 
 def get_distance_to_item(line: list, target_items: int, reverse: bool) -> int:
     dist = 0
@@ -49,20 +50,22 @@ def ai_decision(board:list, agent: DQNAgent, food_eaten: int, steps: int, counte
     action = agent.act(state)
     prev_food = food_eaten
     reward, running, food_eaten = move_snake(board, action, food_eaten)
-    if prev_food == food_eaten:
-        counter += 1
-    else:
-        counter = 0
-    if counter >= 50:
-        running = False
-    reward = reward if running else -10
     if viz:
         render(board, win)
         py.display.update()
-    if running:
-        next_state = get_state(board)
-    else:
-        next_state = [0] * len(state)
-    agent.memory.store(state, action, reward, next_state, running)
-    agent.train(64)
+
+    if not "-p" in sys.argv:
+        if prev_food == food_eaten:
+            counter += 1
+        else:
+            counter = 0
+        if counter >= 50:
+            running = False
+        reward = reward if running else -10
+        if running:
+            next_state = get_state(board)
+        else:
+            next_state = [0] * len(state)
+        agent.memory.store(state, action, reward, next_state, running)
+        agent.train()
     return reward, running, food_eaten, counter

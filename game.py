@@ -5,7 +5,9 @@ from init import place_food
 def calculate_reward(board: list, head: macro.square, target: macro.square, dir: int, isCloser: bool, dist: int) -> float:
     if target.id == macro.GREEN_APPLE:
         return 10
-    return 0.01
+    if isCloser:
+        return 0.1
+    return -1
 
 def green_apple(board: list, head: macro.square, dir: int, length: int):
     if length == 1:
@@ -44,7 +46,7 @@ def move_snake(board: list, dir: int, food_eaten: int) -> tuple[int, bool]:
     target_x, target_y, target = find_square_by_dir(board, head_x, head_y, dir)
     length = find_length(board)
     prev_dist, curr_dist = find_dist(board, head_x, head_y, target_x, target_y)
-    reward = calculate_reward(board, head, target, dir, prev_dist < curr_dist, curr_dist)
+    reward = calculate_reward(board, head, target, dir, prev_dist > curr_dist, curr_dist)
 
     id = move_head(target, head, dir, length)
 
