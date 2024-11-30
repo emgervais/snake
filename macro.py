@@ -8,7 +8,6 @@ BODY = 3
 TAIL = 4
 RED_APPLE = 5
 GREEN_APPLE = 6
-SQUARE_SIZE = HEIGHT / 11
 UP = 0
 DOWN = 1
 LEFT = 2
@@ -20,6 +19,7 @@ opposite = {
     LEFT: RIGHT,
     RIGHT: LEFT
 }
+
 
 @dataclass
 class square:

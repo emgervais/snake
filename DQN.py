@@ -3,25 +3,29 @@ import random
 from collections import deque
 
 # Hyperparameters
-LEARNING_RATE = 0.0005
-GAMMA = 0.95
+LEARNING_RATE = 0.0001
+GAMMA = 0.99
 EPSILON = 1.0
 EPSILON_MIN = 0.01
-EPSILON_DECAY = 0.995
-MAX_MEMORY = 50000
+EPSILON_DECAY = 0.999
+MAX_MEMORY = 100000
 HIDDEN_SIZE = 256
-BATCH_SIZE = 32
-TARGET_UPDATE_FREQUENCY = 1000
+BATCH_SIZE = 64
+TARGET_UPDATE_FREQUENCY = 500
+
 
 class NeuralNetwork:
     def __init__(self, input_size, hidden_size, output_size):
-        self.W1 = np.random.randn(input_size, hidden_size) * np.sqrt(2.0 / input_size)
+        self.W1 = np.random.randn(input_size, hidden_size) * \
+            np.sqrt(2.0 / input_size)
         self.b1 = np.zeros((1, hidden_size))
-        self.W2 = np.random.randn(hidden_size, hidden_size) * np.sqrt(2.0 / hidden_size)
+        self.W2 = np.random.randn(hidden_size, hidden_size) * \
+            np.sqrt(2.0 / hidden_size)
         self.b2 = np.zeros((1, hidden_size))
-        self.W3 = np.random.randn(hidden_size, output_size) * np.sqrt(2.0 / hidden_size)
+        self.W3 = np.random.randn(hidden_size, output_size) * \
+            np.sqrt(2.0 / hidden_size)
         self.b3 = np.zeros((1, output_size))
-        
+
     def relu(self, x):
         return np.maximum(0, x)
 
@@ -38,10 +42,10 @@ class NeuralNetwork:
         # self.a2 = self.dropout(self.a2, rate=0.2)
         self.z3 = np.dot(self.a2, self.W3) + self.b3
         return self.z3
-    
+
     def predict(self, x):
         return self.forward(x)
-    
+
     def train(self, x, y, lr):
         output = self.forward(x)
         error = output - y
@@ -67,20 +71,23 @@ class NeuralNetwork:
         self.W3 -= lr * dW3
         self.b3 -= lr * db3
 
+
 class ReplayBuffer:
     def __init__(self, max_size):
         self.buffer = deque(maxlen=max_size)
-        
+
     def store(self, state, action, reward, next_state, done):
         self.buffer.append((state, action, reward, next_state, done))
-        
+
     def sample(self, batch_size):
         if len(self.buffer) < batch_size:
-            raise ValueError("Not enough samples in the buffer to create a batch")
+            raise ValueError("Not enough samples in\
+                             the buffer to create a batch")
         return random.sample(self.buffer, batch_size)
-    
+
     def can_sample(self, batch_size):
         return len(self.buffer) >= batch_size
+
 
 class DQNAgent:
     def __init__(self, state_size=8, action_size=4):
@@ -92,7 +99,7 @@ class DQNAgent:
         self.target_model = NeuralNetwork(state_size, HIDDEN_SIZE, action_size)
         self.update_target_model()
         self.steps = 0
-        
+
     def update_target_model(self):
         self.target_model.W1 = self.model.W1.copy()
         self.target_model.b1 = self.model.b1.copy()
@@ -100,28 +107,28 @@ class DQNAgent:
         self.target_model.b2 = self.model.b2.copy()
         self.target_model.W3 = self.model.W3.copy()
         self.target_model.b3 = self.model.b3.copy()
-    
+
     def act(self, state):
         state = np.reshape(state, [1, self.state_size])
         if np.random.rand() <= self.epsilon:
             return random.randrange(self.action_size)
         q_values = self.model.predict(state)
         return np.argmax(q_values[0])
-    
+
     def train(self):
         if not self.memory.can_sample(BATCH_SIZE):
             return
-        
+
         minibatch = self.memory.sample(BATCH_SIZE)
         states = np.array([s[0] for s in minibatch])
         next_states = np.array([s[3] for s in minibatch])
         actions = np.array([s[1] for s in minibatch])
         rewards = np.array([s[2] for s in minibatch])
         dones = np.array([s[4] for s in minibatch])
-        
+
         current_q_values = self.model.predict(states)
         next_q_values = self.target_model.predict(next_states)
-        
+
         targets = current_q_values.copy()
         for i in range(BATCH_SIZE):
             if dones[i]:
@@ -129,7 +136,7 @@ class DQNAgent:
             else:
                 target = rewards[i] + GAMMA * np.max(next_q_values[i])
             targets[i][actions[i]] = target
-        
+
         self.model.train(states, targets, LEARNING_RATE)
 
         self.steps += 1
