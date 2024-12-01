@@ -47,7 +47,7 @@ def key_hook(delay: float, agent: DQNAgent, step: bool) -> float:
                     elif event.key == py.K_s:
                         jb.dump(agent, "model")
                     elif event.key == py.K_ESCAPE:
-                        raise exitTrainingProgram
+                        raise exitTrainingProgram()
             time.sleep(0.1)
     for event in py.event.get():
         if event.type == py.KEYDOWN:
@@ -58,7 +58,7 @@ def key_hook(delay: float, agent: DQNAgent, step: bool) -> float:
             elif event.key == py.K_s:
                 jb.dump(agent, "model")
             elif event.key == py.K_ESCAPE:
-                raise exitTrainingProgram
+                raise exitTrainingProgram()
     return delay
 
 
@@ -67,6 +67,7 @@ def game(snakeGame: snakeGame):
         for i in range(snakeGame.iteration):
             food_eaten = 0
             counter = 0
+            visited = set()
             board = init_board(snakeGame.size, snakeGame.square_size)
             if snakeGame.viz:
                 render(board, snakeGame.square_size, snakeGame.win)
@@ -77,17 +78,17 @@ def game(snakeGame: snakeGame):
                     snakeGame.delay = key_hook(snakeGame.delay,
                                                snakeGame.agent, snakeGame.step)
                     time.sleep(snakeGame.delay)
-                reward, running, food_eaten, counter =\
-                    ai_decision(board, snakeGame, food_eaten, counter)
+                reward, running, food_eaten, counter, visited =\
+                    ai_decision(board, snakeGame, food_eaten, counter, visited)
                 total_reward += reward
                 if not running:
                     print(f"Episode #{i} is over \
-                          with a total score of \
-                          {total_reward:.1f} and length {find_length(board)}")
+with a total score of \
+{total_reward:.1f} and length {find_length(board)}")
                     break
-            if i % 10000 == 0:
-                jb.dump(snakeGame.agent, f"snake_dqn_{i + 80000}.h5")
-    except KeyboardInterrupt or exitTrainingProgram as e:
+            if i % 5000 == 0 and i:
+                jb.dump(snakeGame.agent, f"norep_snake_dqn_{i}.h1")
+    except (KeyboardInterrupt, exitTrainingProgram) as e:
         print(e)
         py.quit()
         jb.dump(snakeGame.agent, "model.ml")
@@ -104,7 +105,7 @@ def init_params():
         iteration = int(sys.argv[i])
         if iteration <= 0:
             print("Please enter the amount of iterations greater than 0")
-    except ValueError or IndexError:
+    except (ValueError, IndexError):
         print("Please enter the amount of iterations \
               with the flag -i num_of_iterations")
         exit(1)
@@ -116,10 +117,10 @@ def init_params():
         try:
             index = sys.argv.index("-board") + 1
             size = int(sys.argv[index])
-            if size <= 0:
-                print("Please enter a size greater than 0")
+            if size < 3 or size > 50:
+                print("Please enter a size greater than 0 and smaller than 50")
                 exit(1)
-        except ValueError or IndexError:
+        except (ValueError, IndexError):
             print("Please enter a size after the flag -board")
             exit(1)
     if "-l" in sys.argv or evaluate:
@@ -129,7 +130,7 @@ def init_params():
             else:
                 index = sys.argv.index("-l") + 1
             agent = jb.load(sys.argv[index])
-        except ValueError or IndexError:
+        except (ValueError, IndexError, KeyError):
             print("Please enter the model file to load")
             exit(1)
     snake = snakeGame(agent, viz, iteration, evaluate, size)

@@ -69,24 +69,31 @@ def get_state(board: list) -> list:
 
 
 def ai_decision(board: list, snakeGame,
-                food_eaten: int, counter: int) -> tuple[float, bool]:
+                food_eaten: int, counter: int,
+                visited_states: set) -> tuple[float, bool]:
     agent = snakeGame.agent
-    state = get_state(board)
+    state = tuple(get_state(board))
     action = agent.act(state)
     prev_food = food_eaten
-    # if viz:
-    #     print(["up", "down", "left", "right"][action])
-    #     print_vision(board)
+    if snakeGame.viz:
+        print(["up", "down", "left", "right"][action])
+        print_vision(board)
     reward, running, food_eaten = move_snake(board, action, food_eaten)
     if snakeGame.viz:
         render(board, snakeGame.square_size, snakeGame.win)
         py.display.update()
 
+    if state in visited_states:
+        reward -= 3
+    visited_states.add(state)
+
     if prev_food == food_eaten:
         counter += 1
     else:
         counter = 0
-    if counter >= 50:
+        visited_states = set()
+
+    if counter >= 100000000000:
         running = False
         print("looped")
     if "-e" not in sys.argv:
@@ -97,4 +104,4 @@ def ai_decision(board: list, snakeGame,
             next_state = [0] * len(state)
         agent.memory.store(state, action, reward, next_state, running)
         agent.train()
-    return reward, running, food_eaten, counter
+    return reward, running, food_eaten, counter, visited_states

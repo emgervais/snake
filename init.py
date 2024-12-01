@@ -9,14 +9,25 @@ def draw_grid_of_squares(board: list, square_size: float, win):
             pyd.rect(win, "white", (el.x, el.y, square_size, square_size), 1)
 
 
+def filled(board: list) -> bool:
+    for row in board:
+        for el in row:
+            if el.id == 0:
+                return False
+    return True
+
+
 def place_food(board: list, item: int):
     size = len(board) - 1
-    while True:
+    while True and not filled(board):
         x = random.randint(0, size)
         y = random.randint(0, size)
         if board[x][y].id == 0:
             board[x][y].id = item
             break
+    if filled(board):
+        print("You won!")
+        exit(0)
 
 
 def add_tail(board: list, x: int, y: int,
